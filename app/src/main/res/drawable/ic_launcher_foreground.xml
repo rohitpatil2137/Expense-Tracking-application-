@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Branding Accent Ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:pathData="M 54,21 A 33,33 0 1,1 53.9,21 Z" />
+        
+    <!-- Vertical Financial Growth Chart Bars -->
+    <path
+        android:fillColor="#60A5FA"
+        android:pathData="M34,68 h6 v-10 h-6 z M44,68 h6 v-18 h-6 z M54,68 h6 v-28 h-6 z M64,68 h6 v-38 h-6 z" />
+
+    <!-- Highly Elegant Currency Symbol Overlay -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,29v48 M45,39 c5,-5 13,-5 18,0 c3.5,3.5 0,9 -5,11.5 c-5,2.5 -8.5,3.5 -5,9 c4,5 12,3.5 15,-1.5" />
+        
+</vector>

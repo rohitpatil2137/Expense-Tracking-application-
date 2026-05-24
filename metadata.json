@@ -1,0 +1,6 @@
+{
+  "name": "Expense Tracker",
+  "description": "A visually stunning expenses tracking app with custom category charts, smart budget limits, and monthly alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
