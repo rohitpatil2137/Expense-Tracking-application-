@@ -1,12 +1,13 @@
 package com.example.ui
 
 import android.Manifest
-import android.app.DatePickerDialog
 import android.content.pm.PackageManager
-import android.widget.DatePicker
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.DatePickerDialog as M3DatePickerDialog
 import com.example.data.ParsedTransaction
 import com.example.data.SmsTransactionParser
 import androidx.compose.animation.AnimatedVisibility
@@ -165,6 +166,7 @@ fun ExpenseScreen(viewModel: ExpenseViewModel) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showBudgetDialog by remember { mutableStateOf(false) }
+    var showMonthYearPicker by remember { mutableStateOf(false) }
 
     val monthNames = listOf(
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -197,18 +199,7 @@ fun ExpenseScreen(viewModel: ExpenseViewModel) {
                                 shape = RoundedCornerShape(20.dp)
                             )
                             .clickable {
-                                // Simple interactive date picker bounds for month change
-                                val calendar = Calendar.getInstance()
-                                val dialog = DatePickerDialog(
-                                    context,
-                                    { _: DatePicker, year: Int, month: Int, _ ->
-                                        viewModel.selectMonth(year, month)
-                                    },
-                                    uiState.selectedYear,
-                                    uiState.selectedMonth,
-                                    1
-                                )
-                                dialog.show()
+                                showMonthYearPicker = true
                             }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -333,6 +324,19 @@ fun ExpenseScreen(viewModel: ExpenseViewModel) {
                 onDismiss = { showBudgetDialog = false },
                 onSave = { newBudget ->
                     viewModel.setTotalBudget(newBudget)
+                }
+            )
+        }
+
+        // Month Year Picker Dialog Model
+        if (showMonthYearPicker) {
+            MonthYearPickerDialog(
+                currentYear = uiState.selectedYear,
+                currentMonth = uiState.selectedMonth,
+                onDismiss = { showMonthYearPicker = false },
+                onSelect = { year, month ->
+                    viewModel.selectMonth(year, month)
+                    showMonthYearPicker = false
                 }
             )
         }
@@ -1669,6 +1673,7 @@ fun AddExpenseDialog(
     var selectedCategory by remember { mutableStateOf(categories.first()) }
     var note by remember { mutableStateOf("") }
     var dateInMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     var titleError by remember { mutableStateOf(false) }
     var amountError by remember { mutableStateOf(false) }
@@ -1837,20 +1842,7 @@ fun AddExpenseDialog(
                             shape = RoundedCornerShape(12.dp)
                         )
                         .clickable {
-                            val cal = Calendar.getInstance()
-                            cal.timeInMillis = dateInMillis
-                            val dialog = DatePickerDialog(
-                                context,
-                                { _: DatePicker, year: Int, month: Int, day: Int ->
-                                    val newCal = Calendar.getInstance()
-                                    newCal.set(year, month, day)
-                                    dateInMillis = newCal.timeInMillis
-                                },
-                                cal.get(Calendar.YEAR),
-                                cal.get(Calendar.MONTH),
-                                cal.get(Calendar.DAY_OF_MONTH)
-                            )
-                            dialog.show()
+                            showDatePicker = true
                         }
                         .padding(14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1919,6 +1911,132 @@ fun AddExpenseDialog(
                 Text("Confirm")
             }
         },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+
+    if (showDatePicker) {
+        ComposeDatePickerDialog(
+            initialSelectedDateMillis = dateInMillis,
+            onDismiss = { showDatePicker = false },
+            onDateSelected = { selectedDate ->
+                dateInMillis = selectedDate
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ComposeDatePickerDialog(
+    initialSelectedDateMillis: Long,
+    onDismiss: () -> Unit,
+    onDateSelected: (Long) -> Unit
+) {
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialSelectedDateMillis)
+    M3DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { onDateSelected(it) }
+                    onDismiss()
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+@Composable
+fun MonthYearPickerDialog(
+    currentYear: Int,
+    currentMonth: Int,
+    onDismiss: () -> Unit,
+    onSelect: (Int, Int) -> Unit
+) {
+    var selectedYear by remember { mutableIntStateOf(currentYear) }
+    val monthNames = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { selectedYear-- }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Previous Year"
+                    )
+                }
+                Text(
+                    text = selectedYear.toString(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(onClick = { selectedYear++ }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Next Year"
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val months = (0..11).toList()
+                val chunkedMonths = months.chunked(3)
+                
+                chunkedMonths.forEach { rowMonths ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowMonths.forEach { month ->
+                            val isSelected = month == currentMonth && selectedYear == currentYear
+                            Button(
+                                onClick = { onSelect(selectedYear, month) },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = monthNames[month].take(3),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
